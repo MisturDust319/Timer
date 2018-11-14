@@ -76,8 +76,7 @@ public class MyActivity extends Activity {
 
             // TASK 3: DISPLAY THE TIME IN THE TEXTVIEW
             timeDisplay.setText(String.format("%02d", minutes) + ":"
-                    + String.format("%02d", seconds) + ":"
-                    + String.format("%02d", milliseconds));
+                    + String.format("%02d", seconds));
 
             // TASK 4: SPECIFY NO TIME LAPSE BETWEEN POSTING
             mHandler.postDelayed(this, 10);
