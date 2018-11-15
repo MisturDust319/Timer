@@ -6,35 +6,23 @@ public class WatchTime {
     private long mStartTime;
     private long mTimeUpdate;
     private long mStoredTime;
+    private long t0;
 
     public WatchTime() {
-        mStartTime = 0L;
-        mTimeUpdate = 0L;
         mStoredTime = 0L;
     }
 
     public void resetWatchTime() {
-        mStartTime = 0L;
         mStoredTime = 0L;
-        mTimeUpdate = 0L;
     }
 
-    public void setStartTime(long startTime){
-        mStartTime = startTime;
-    }
-    public long getStartTime(){
-        return mStartTime;
-    }
-    public void setTimeUpdate(long timeUpdate){
-        mTimeUpdate = timeUpdate;
-    }
-    public long getTimeUpdate(){
-        return mTimeUpdate;
-    }
-    public void addStoredTime(long timeInMilliseconds){
-        mStoredTime += timeInMilliseconds;
+    public long getT0() { return t0; }
+    public void setT0(long t0) { this.t0 = t0; }
+    public void subtractStoredTime(long timeInMilliseconds){
+        mStoredTime -= timeInMilliseconds;
     }
     public long getStoredTime(){
         return mStoredTime;
     }
+    public void setStoredTime(long timeInMilliseconds) { mStoredTime = timeInMilliseconds; }
 }
