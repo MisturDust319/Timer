@@ -3,18 +3,24 @@ package com.cornez.stopwatch;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.os.SystemClock;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class MyActivity extends Activity {
 
     // UI ELEMENTS: BUTTONS WILL TOGGLE IN VISIBILITY
-    private TextView timeDisplay;
+    private EditText timeDisplay;
     private Button startBtn;
     private Button stopBtn;
     private Button resetBtn;
@@ -27,6 +33,9 @@ public class MyActivity extends Activity {
     //private Handler handler = new Handler();
     private Handler mHandler;
 
+    // MESSAGE CONSTANTS
+    private static final int STOP_TIMER = 100;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // TASK 1: ACTIVATE THE ACTIVITY AND THE LAYOUT
@@ -34,19 +43,44 @@ public class MyActivity extends Activity {
         setContentView(R.layout.activity_my);
 
         // TASK 2: CREATE REFERENCES TO UI COMPONENTS
-        timeDisplay = (TextView) findViewById(R.id.textView1);
+        timeDisplay = (EditText) findViewById(R.id.textView1);
         startBtn = (Button) findViewById(R.id.button1);
         stopBtn = (Button) findViewById(R.id.button2);
         resetBtn = (Button) findViewById(R.id.button3);
 
-        // TASK 3: HIDE THE STOP BUTTON
-        stopBtn.setEnabled(false);
+        // TASK 3: INIT THE UI
+        initUI();
 
         // TASK 4: INSTANTIATE THE OBJECT THAT MODELS THE STOPWATCH TIME
         watchTime = new WatchTime();
 
         //TASK 5: INSTANTIATE A HANDLER TO RUN ON THE UI THREAD
-        mHandler = new Handler();
+        mHandler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.arg1) {
+                    case STOP_TIMER:
+                        // reset UI
+                        initUI();
+                        this.removeCallbacks(updateTimerRunnable);
+                        break;
+                }
+            }
+        };
+    }
+
+    // sets the UI to it's default value
+    private void initUI() {
+        // PROGRAM SIDE
+        // HIDE THE STOP BUTTON
+        startBtn.setEnabled(true);
+        stopBtn.setEnabled(false);
+        resetBtn.setEnabled(true);
+
+        // UI SIDE
+        // SET THE TIMER DISPLAY
+        timeDisplay.setText("00:00");
+
     }
 
     public void startTimer(View view) {
@@ -56,8 +90,22 @@ public class MyActivity extends Activity {
         startBtn.setEnabled(false);
         resetBtn.setEnabled(false);
 
-        // TASK 2: SET THE START TIME AND CALL THE CUSTOM HANDLER
-        watchTime.setStartTime(SystemClock.uptimeMillis());
+        // TASK 2: GET USER TIME INPUT
+        long userTime = 0;
+        String[] timeSegments = timeDisplay.getText().toString().split(":");
+        // check if this is valid data, if not just set to 0
+        try {
+            userTime = 1000L * (60L * Long.parseLong(timeSegments[0]) + Long.parseLong(timeSegments[1]));
+        } catch (NumberFormatException e) {
+            // return to default UI
+            initUI();
+        }
+
+        // TASK 3: SET THE START TIME AND CALL THE CUSTOM HANDLER
+        // set stored time
+        watchTime.setStoredTime(userTime);
+        // set t0, used to calculate time decrement
+        watchTime.setT0(SystemClock.uptimeMillis());
         mHandler.postDelayed(updateTimerRunnable, 20);
     }
 
@@ -65,20 +113,33 @@ public class MyActivity extends Activity {
         public void run() {
 
             // TASK 1: COMPUTE THE TIME DIFFERENCE
-            timeInMilliseconds = SystemClock.uptimeMillis() - watchTime.getStartTime();
-            watchTime.setTimeUpdate(watchTime.getStoredTime() + timeInMilliseconds);
-            int time = (int) (watchTime.getTimeUpdate() / 1000);
+//            timeInMilliseconds = watchTime.getStoredTime() - SystemClock.uptimeMillis();
+            timeInMilliseconds =  SystemClock.uptimeMillis() - watchTime.getT0();
+            // reset t0
+            watchTime.setT0(SystemClock.uptimeMillis());
+
+//            watchTime.setTimeUpdate(watchTime.getStoredTime() - timeInMilliseconds);
+            int time = (int) (watchTime.getStoredTime() / 1000);
+            // decrement the stored time
+            watchTime.subtractStoredTime(timeInMilliseconds);
 
             // TASK 2: COMPUTE MINUTES, SECONDS, AND MILLISECONDS
             int minutes = time / 60;
             int seconds = time % 60;
-            int milliseconds = (int) (watchTime.getTimeUpdate() % 100);
+            int milliseconds = (int) (watchTime.getStoredTime() % 100);
 
             // TASK 3: DISPLAY THE TIME IN THE TEXTVIEW
             timeDisplay.setText(String.format("%02d", minutes) + ":"
                     + String.format("%02d", seconds));
 
-            // TASK 4: SPECIFY NO TIME LAPSE BETWEEN POSTING
+            // TASK 4: CHECK FOR TIMER END
+            if(watchTime.getStoredTime() <= 0L) {
+                // end thread
+                Message msg = mHandler.obtainMessage(0, STOP_TIMER, 0);
+                mHandler.sendMessageAtFrontOfQueue(msg);
+            }
+
+            // TASK 5: SPECIFY NO TIME LAPSE BETWEEN POSTING
             mHandler.postDelayed(this, 10);
         }
     };
@@ -91,7 +152,7 @@ public class MyActivity extends Activity {
         resetBtn.setEnabled(true);
 
         // TASK 2: UPDATE THE TIME SWAP VALUE AND CALL THE HANDLER
-        watchTime.addStoredTime(timeInMilliseconds);
+        // watchTime.addStoredTime(timeInMilliseconds);
         mHandler.removeCallbacks(updateTimerRunnable);
     }
 
@@ -105,8 +166,7 @@ public class MyActivity extends Activity {
 
         // TASK 3: DISPLAY THE TIME IN THE TEXTVIEW
         timeDisplay.setText(String.format("%02d", minutes) + ":"
-                + String.format("%02d", seconds) + ":"
-                + String.format("%02d", milliseconds));
+                + String.format("%02d", seconds));
     }
 
     @Override
