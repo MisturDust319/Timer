@@ -1,10 +1,13 @@
 package com.cornez.stopwatch;
 
 import android.app.Activity;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+import android.util.SparseIntArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,6 +31,10 @@ public class MyActivity extends Activity {
     // TIME ELEMENTS
     private WatchTime watchTime;
     private long timeInMilliseconds = 0L;
+
+    // SOUND MANAGEMENT TOOLS
+    private SoundPool soundPool;
+    private SparseIntArray soundMap;
 
     // THE HANDLER FOR THE THREAD ELEMENT
     //private Handler handler = new Handler();
@@ -66,11 +73,20 @@ public class MyActivity extends Activity {
                     case STOP_TIMER:
                         // reset UI
                         initUI();
+                        // play alarm
+                        soundPool.play(1, 1, 1, 1, 0, 1.0f);
+                        // end timer thread
                         this.removeCallbacks(updateTimerRunnable);
                         break;
                 }
             }
         };
+
+        // INIT SOUND MANAGEMENT OBJECTS
+        soundPool = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
+        soundMap = new SparseIntArray(1);
+        soundMap.put(1, soundPool.load(this, R.raw.alarm, 1));
+
     }
 
     // sets the UI to it's default value
