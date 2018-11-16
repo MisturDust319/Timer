@@ -23,7 +23,7 @@ public class MyActivity extends Activity {
     private EditText timeDisplay;
     private Button startBtn;
     private Button stopBtn;
-    private Button resetBtn;
+    private Button onOffBtn;
 
     // TIME ELEMENTS
     private WatchTime watchTime;
@@ -33,8 +33,12 @@ public class MyActivity extends Activity {
     //private Handler handler = new Handler();
     private Handler mHandler;
 
+    // INTERNAL VALUES
+    boolean onOffVal = true;
+
     // MESSAGE CONSTANTS
     private static final int STOP_TIMER = 100;
+    private static final int PAUSE_TIMER = 101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +50,7 @@ public class MyActivity extends Activity {
         timeDisplay = (EditText) findViewById(R.id.textView1);
         startBtn = (Button) findViewById(R.id.button1);
         stopBtn = (Button) findViewById(R.id.button2);
-        resetBtn = (Button) findViewById(R.id.button3);
+        onOffBtn = (Button) findViewById(R.id.button3);
 
         // TASK 3: INIT THE UI
         initUI();
@@ -75,7 +79,9 @@ public class MyActivity extends Activity {
         // HIDE THE STOP BUTTON
         startBtn.setEnabled(true);
         stopBtn.setEnabled(false);
-        resetBtn.setEnabled(true);
+//        onOffBtn.setEnabled(true);
+        // set on/off to on
+        setButtonOn();
 
         // UI SIDE
         // SET THE TIMER DISPLAY
@@ -83,12 +89,24 @@ public class MyActivity extends Activity {
 
     }
 
+    // set the on/off to off
+    private void setButtonOff() {
+        onOffBtn.setText(R.string.Off);
+        onOffVal = false;
+    }
+
+    // set the on/off to on
+    private void setButtonOn() {
+        onOffBtn.setText(R.string.On);
+        onOffVal = true;
+    }
+
     public void startTimer(View view) {
         // TASK 1: SET THE START BUTTON TO INVISIBLE
         //         AND THE STOP BUTTON TO VISIBLE
         stopBtn.setEnabled(true);
         startBtn.setEnabled(false);
-        resetBtn.setEnabled(false);
+        setButtonOff();
 
         // TASK 2: GET USER TIME INPUT
         long userTime = 0;
@@ -149,7 +167,7 @@ public class MyActivity extends Activity {
         //         AND ENABLE THE STOP BUTTON
         stopBtn.setEnabled(false);
         startBtn.setEnabled(true);
-        resetBtn.setEnabled(true);
+        onOffBtn.setEnabled(true);
 
         // TASK 2: UPDATE THE TIME SWAP VALUE AND CALL THE HANDLER
         // watchTime.addStoredTime(timeInMilliseconds);
@@ -157,16 +175,16 @@ public class MyActivity extends Activity {
     }
 
     public void resetTimer(View view) {
+        // TASK 1: CLEAR WATCH TIME
         watchTime.resetWatchTime();
-        timeInMilliseconds = 0L;
 
-        int minutes = 0;
-        int seconds = 0;
-        int milliseconds = 0;
+        // TASK 2: END THE TIMER THREAD
+        Message msg = mHandler.obtainMessage(0, STOP_TIMER, 0);
+        mHandler.sendMessageAtFrontOfQueue(msg);
 
         // TASK 3: DISPLAY THE TIME IN THE TEXTVIEW
-        timeDisplay.setText(String.format("%02d", minutes) + ":"
-                + String.format("%02d", seconds));
+        setButtonOn();
+        initUI();
     }
 
     @Override
